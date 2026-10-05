@@ -1,0 +1,27 @@
+{
+  "building": "Main Building",
+  "nodes": [
+    { "id": "R1", "label": "Room 1", "type": "room", "x": 120, "y": 160 },
+    { "id": "R2", "label": "Room 2", "type": "room", "x": 120, "y": 360 },
+    { "id": "C1", "label": "Junction 1", "type": "junction", "x": 300, "y": 160 },
+    { "id": "C2", "label": "Junction 2", "type": "junction", "x": 480, "y": 160 },
+    { "id": "C3", "label": "Junction 3", "type": "junction", "x": 300, "y": 360 },
+    { "id": "C4", "label": "Junction 4", "type": "junction", "x": 480, "y": 360 },
+    { "id": "E1", "label": "Exit 1", "type": "exit", "x": 660, "y": 160 },
+    { "id": "E2", "label": "Exit 2", "type": "exit", "x": 660, "y": 360 }
+  ],
+  "edges": [
+    { "id": "CR1", "from": "R1", "to": "C1", "cost": 3 },
+    { "id": "CR2", "from": "C1", "to": "C2", "cost": 2 },
+    { "id": "CR3", "from": "C2", "to": "E1", "cost": 2 },
+    { "id": "CR4", "from": "C1", "to": "C3", "cost": 3 },
+    { "id": "CR5", "from": "C3", "to": "C4", "cost": 3 },
+    { "id": "CR6", "from": "C4", "to": "E2", "cost": 2 },
+    { "id": "CR7", "from": "R2", "to": "C3", "cost": 2 }
+  ],
+  "initial_state": {
+    "blocked_nodes": [],
+    "blocked_edges": [],
+    "closed_exits": []
+  }
+}
