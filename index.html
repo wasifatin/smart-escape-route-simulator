@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Escape — Interactive Evacuation Route Simulator</title>
+    <meta name="description" content="Smart Escape is an interactive evacuation route simulator using Dijkstra's algorithm to find optimal escape routes.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ============ HEADER ============ -->
+    <header id="app-header">
+        <div class="header-content">
+            <div class="header-branding">
+                <div class="logo-icon" aria-hidden="true">
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                        <path d="M18 2L4 10v16l14 8 14-8V10L18 2z" fill="url(#logoGrad)" opacity="0.9"/>
+                        <path d="M18 12l-6 4v6l6 4 6-4v-6l-6-4z" fill="#fff" opacity="0.3"/>
+                        <path d="M18 14v8M14 18h8" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+                        <defs><linearGradient id="logoGrad" x1="4" y1="2" x2="32" y2="34">
+                            <stop stop-color="#06b6d4"/><stop offset="1" stop-color="#8b5cf6"/>
+                        </linearGradient></defs>
+                    </svg>
+                </div>
+                <div class="header-text">
+                    <h1 id="main-title">SMART ESCAPE</h1>
+                    <p id="subtitle" data-i18n="subtitle">Interactive Evacuation Route Simulator</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="lang-switcher" role="group" aria-label="Language">
+                    <button id="btn-lang-en" class="lang-btn active" aria-pressed="true">English</button>
+                    <button id="btn-lang-bn" class="lang-btn" aria-pressed="false">বাংলা</button>
+                </div>
+                <button id="btn-reset" class="btn-action btn-reset" disabled aria-label="Reset simulation">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M14 8A6 6 0 1 1 8 2v2l3-3-3-3v2a7 7 0 1 0 7 7h-1z"/></svg>
+                    <span data-i18n="reset">Reset</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="app-main">
+
+        <!-- ============ IMPORT SECTION ============ -->
+        <section id="import-section" class="panel fade-in">
+            <div class="panel-header">
+                <svg class="panel-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M3 17a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4.586a1 1 0 0 1 .707.293l1.414 1.414A1 1 0 0 0 10.414 5H17a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3z"/></svg>
+                <h2 data-i18n="importTitle">Import Building Data</h2>
+            </div>
+            <div class="import-content">
+                <label for="file-input" class="file-label" tabindex="0" role="button">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 0 1 1 1v5.586l1.707-1.707a1 1 0 1 1 1.414 1.414l-3.414 3.414a1 1 0 0 1-1.414 0L5.879 9.293a1 1 0 0 1 1.414-1.414L9 9.586V4a1 1 0 0 1 1-1zM4 14a1 1 0 1 1 0 2h12a1 1 0 1 1 0-2H4z"/></svg>
+                    <span data-i18n="selectFile">Select JSON File</span>
+                </label>
+                <input type="file" id="file-input" accept=".json" aria-label="Select building JSON file">
+                <div id="import-status" class="status-message" role="status" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <!-- ============ MAIN CONTENT (CONTROLS + MAP) ============ -->
+        <div id="main-content" class="main-grid hidden">
+
+            <!-- CONTROLS PANEL -->
+            <aside id="controls-panel" class="panel fade-in">
+                <!-- Start Location -->
+                <div class="control-group">
+                    <div class="panel-header">
+                        <svg class="panel-icon" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 1 1 9.9 9.9L10 18.9l-4.95-4.95a7 7 0 0 1 0-9.9zM10 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+                        <h3 data-i18n="startLocation">Start Location</h3>
+                    </div>
+                    <select id="start-select" aria-label="Select starting location">
+                        <option value="" data-i18n="selectStart">— Select Starting Point —</option>
+                    </select>
+                    <p id="start-info" class="info-text" role="status" aria-live="polite"></p>
+                </div>
+
+                <!-- Hazard Controls -->
+                <div class="control-group">
+                    <div class="panel-header">
+                        <svg class="panel-icon" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-1-2a1 1 0 0 1-1-1V8a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1z"/></svg>
+                        <h3 data-i18n="hazardControls">Hazard Controls</h3>
+                    </div>
+
+                    <div class="hazard-section">
+                        <h4 data-i18n="rooms">Rooms</h4>
+                        <div id="room-controls" class="hazard-list"></div>
+                    </div>
+
+                    <div class="hazard-section">
+                        <h4 data-i18n="junctions">Junctions</h4>
+                        <div id="junction-controls" class="hazard-list"></div>
+                    </div>
+
+                    <div class="hazard-section">
+                        <h4 data-i18n="corridors">Corridors</h4>
+                        <div id="corridor-controls" class="hazard-list"></div>
+                    </div>
+
+                    <div class="hazard-section">
+                        <h4 data-i18n="exits">Exits</h4>
+                        <div id="exit-controls" class="hazard-list"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAP PANEL -->
+            <section id="map-panel" class="panel fade-in">
+                <div class="panel-header">
+                    <svg class="panel-icon" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 0 0 2 4v10a1 1 0 0 0 .293.707L6 18.414V5.586L3.707 3.293zM14 5.586v12.828l2.293-2.293A1 1 0 0 0 17 15.414V5.414a1 1 0 0 0-.293-.707L14 2.586v3z"/></svg>
+                    <h3 data-i18n="buildingMap">Building Map</h3>
+                </div>
+                <div id="map-container">
+                    <svg id="building-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Building floor plan map">
+                        <defs>
+                            <!-- Glow filter for selected start -->
+                            <filter id="glow-selected" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="4" result="blur"/>
+                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                            <!-- Glow filter for route -->
+                            <filter id="glow-route" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="3" result="blur"/>
+                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                            <!-- Blocked pattern -->
+                            <pattern id="blocked-pattern" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(239,68,68,0.4)" stroke-width="2"/>
+                            </pattern>
+                        </defs>
+                        <g id="edges-layer"></g>
+                        <g id="edge-labels-layer"></g>
+                        <g id="route-layer"></g>
+                        <g id="nodes-layer"></g>
+                    </svg>
+                </div>
+            </section>
+        </div>
+
+        <!-- ============ ROUTE INFORMATION ============ -->
+        <section id="route-section" class="panel fade-in hidden">
+            <div class="panel-header">
+                <svg class="panel-icon" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm1-11a1 1 0 1 0-2 0v3.586L7.707 11.293a1 1 0 1 0-1.414 1.414l3 3a1 1 0 0 0 1.414 0l3-3a1 1 0 0 0-1.414-1.414L11 10.586V7z"/></svg>
+                <h3 data-i18n="routeInfo">Route Information</h3>
+            </div>
+            <div id="route-display" class="route-content">
+                <div class="route-item">
+                    <span class="route-label" data-i18n="startLabel">Start:</span>
+                    <span id="route-start" class="route-value">—</span>
+                </div>
+                <div class="route-item">
+                    <span class="route-label" data-i18n="exitLabel">Exit:</span>
+                    <span id="route-exit" class="route-value">—</span>
+                </div>
+                <div class="route-item route-item-full">
+                    <span class="route-label" data-i18n="routeLabel">Route:</span>
+                    <span id="route-path" class="route-value route-path-text">—</span>
+                </div>
+                <div class="route-item">
+                    <span class="route-label" data-i18n="costLabel">Total Cost:</span>
+                    <span id="route-cost" class="route-value">—</span>
+                </div>
+                <div class="route-item">
+                    <span class="route-label" data-i18n="statusLabel">Status:</span>
+                    <span id="route-status" class="route-value status-badge">—</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ LEGEND ============ -->
+        <section id="legend-section" class="panel fade-in hidden">
+            <div class="panel-header">
+                <svg class="panel-icon" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 0 0 0 2h2a1 1 0 1 0 0-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 0 1 2-2c.178 0 .348.03.512.074A3.98 3.98 0 0 1 9 2h2c.898 0 1.726.296 2.394.794A2 2 0 0 1 16 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm3 4a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2H7zm0 3a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H7zm0 3a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2H7z"/></svg>
+                <h3 data-i18n="legend">Legend</h3>
+            </div>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <svg class="legend-icon" width="32" height="24" viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" rx="6" fill="#2563eb" stroke="#60a5fa" stroke-width="1.5"/></svg>
+                    <span data-i18n="legendRoom">Room</span>
+                </div>
+                <div class="legend-item">
+                    <svg class="legend-icon" width="32" height="24" viewBox="0 0 32 24"><circle cx="16" cy="12" r="10" fill="#7c3aed" stroke="#a78bfa" stroke-width="1.5"/></svg>
+                    <span data-i18n="legendJunction">Junction</span>
+                </div>
+                <div class="legend-item">
+                    <svg class="legend-icon" width="32" height="24" viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" rx="6" fill="#059669" stroke="#34d399" stroke-width="1.5"/></svg>
+                    <span data-i18n="legendExit">Exit</span>
+                </div>
+                <div class="legend-item">
+                    <svg class="legend-icon" width="32" height="24" viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" rx="6" fill="#d97706" stroke="#fbbf24" stroke-width="2"/></svg>
+                    <span data-i18n="legendSelected">Selected Start</span>
+                </div>
+                <div class="legend-item">
+                    <svg class="legend-icon" width="32" height="24" viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" rx="6" fill="#991b1b" stroke="#ef4444" stroke-width="1.5" opacity="0.7"/><line x1="6" y1="6" x2="26" y2="18" stroke="#ef4444" stroke-width="2"/><line x1="26" y1="6" x2="6" y2="18" stroke="#ef4444" stroke-width="2"/></svg>
+                    <span data-i18n="legendBlocked">Blocked Node</span>
+                </div>
+                <div class="legend-item">
+                    <svg class="legend-icon" width="32" height="24" viewBox="0 0 32 24"><line x1="2" y1="12" x2="30" y2="12" stroke="#ef4444" stroke-width="3" stroke-dasharray="4,3" opacity="0.8"/></svg>
+                    <span data-i18n="legendBlockedCorridor">Blocked Corridor</span>
+                </div>
+                <div class="legend-item">
+                    <svg class="legend-icon" width="32" height="24" viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" rx="6" fill="#374151" stroke="#6b7280" stroke-width="1.5" opacity="0.7"/><line x1="8" y1="6" x2="24" y2="18" stroke="#9ca3af" stroke-width="2"/><line x1="24" y1="6" x2="8" y2="18" stroke="#9ca3af" stroke-width="2"/></svg>
+                    <span data-i18n="legendClosed">Closed Exit</span>
+                </div>
+                <div class="legend-item">
+                    <svg class="legend-icon" width="32" height="24" viewBox="0 0 32 24"><line x1="2" y1="12" x2="30" y2="12" stroke="#22d3ee" stroke-width="3.5" stroke-linecap="round"/></svg>
+                    <span data-i18n="legendRoute">Active Route</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ INSTRUCTIONS ============ -->
+        <section id="instructions-section" class="panel fade-in hidden">
+            <div class="panel-header">
+                <svg class="panel-icon" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM9 9a1 1 0 0 0 0 2v3a1 1 0 0 0 1 1h1a1 1 0 1 0 0-2v-3a1 1 0 0 0-1-1H9z"/></svg>
+                <h3 data-i18n="instructions">Instructions</h3>
+            </div>
+            <ol id="instructions-list">
+                <li data-i18n="instruction1">Import a building JSON file.</li>
+                <li data-i18n="instruction2">Select a room or junction as your starting point.</li>
+                <li data-i18n="instruction3">The application calculates the lowest-cost route to an open exit.</li>
+                <li data-i18n="instruction4">Block rooms, junctions or corridors to simulate hazards.</li>
+                <li data-i18n="instruction5">Close exits to simulate unavailable exits.</li>
+                <li data-i18n="instruction6">The route is recalculated automatically.</li>
+                <li data-i18n="instruction7">Use Reset to restore the original condition.</li>
+            </ol>
+        </section>
+
+    </main>
+
+    <!-- ============ FOOTER ============ -->
+    <footer id="app-footer">
+        <p>Smart Escape &copy; 2026 — <span data-i18n="footerText">Educational Evacuation Simulator</span></p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
